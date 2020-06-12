@@ -1,4 +1,4 @@
-module moutmul(x,y,n,clk,result);
+module MONT_MUL(x,y,n,clk,result);
     input   [2047:0]    x;
     input   [2047:0]    y;
     input   [2047:0]    n;
@@ -6,7 +6,7 @@ module moutmul(x,y,n,clk,result);
 
     output  reg [2047:0]    result;
 
-    reg     [2047:0]    i;    
+    reg     [10:0]    i;    
     reg     [2047:0]    temp1;
     reg     [2047:0]    temp2;
     reg     [1:0]       status;
@@ -14,10 +14,14 @@ module moutmul(x,y,n,clk,result);
     wire    [2047:0]    temp3;
     wire    [2047:0]    temp4;
 
-    assign temp3 = ( x * 2**11 ) % n;
-    assign temp4 = ( y * 2**11 ) % n;
+//    assign temp3 = ( x * 2**2048 ) % n;
+//    assign temp4 = ( y * 2**2048 ) % n;
 
-    parameter [1:0] start = 2'b00,mul=2'b01, done=2'b10;
+    assign temp3 = ( x % n ) * ( 2**2048 % n) % n;
+    assign temp3 = ( y % n ) * ( 2**2048 % n) % n;
+
+
+    parameter [1:0] start = 2'b00,mul = 2'b01, redc = 2'b10, done = 2'b11;
 
 always@(posedge clk) 
 
