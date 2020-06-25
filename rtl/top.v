@@ -15,9 +15,9 @@ module TOP;
 initial begin
 	$dumpfile("test.vcd");
     $dumpvars(0,TOP);
-	x = 953213471;
-	y = 9663486725113;
-	n = 9561345678456161;
+	x = 5;
+	y = 1;
+	n = 3;
 	sys_rst = 1;
 	#5;
 	sys_rst = 0;

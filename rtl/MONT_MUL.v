@@ -16,9 +16,9 @@ module MONT_MUL(x,y,n,clk,mm_rst,mm_finish,result);
 	reg					mul_rst;
 
     wire    mul_finish;
-	wire    [2047:0]    r;
-    wire    [2048:0]    temp1;
-    wire    [2048:0]    temp2;
+	wire    [2049:0]    r;
+    wire    [4096:0]    temp1;
+    wire    [4096:0]    temp2;
 
     MUL mul_u(.x(tempx),.y(tempy),.n(n),.clk(clk),.mul_rst(mul_rst),.result(r),.mul_start(mul_start),.mul_finish(mul_finish));
 					
@@ -38,7 +38,7 @@ module MONT_MUL(x,y,n,clk,mm_rst,mm_finish,result);
 			mul_rst <= 0;
 		end
 
-		case (status)
+		case (status)	// synthesis parallel_case
 			start: 
 				begin
 					if(!mm_rst)

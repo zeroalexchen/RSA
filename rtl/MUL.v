@@ -7,12 +7,10 @@ module MUL(x,y,n,clk,mul_rst,mul_start,result,mul_finish);
 	input				mul_rst;
 	input				mul_start;
 
-    output  reg [2047:0]    result;
+    output  reg [2049:0]    result;
 	output	reg			mul_finish;
 
     reg     [10:0]      i;    
-    reg     [2047:0]    temp1;
-    reg     [2047:0]    temp2;
     reg     [1:0]       status;
 
     parameter [1:0] start = 2'b00,mul = 2'b01, done = 2'b10;
@@ -25,7 +23,7 @@ always@(posedge clk or posedge mul_rst) begin
         status <= start;
     end
 
-    case (status)
+    case (status)   // synthesis parallel_case
         start:
             begin
                 if(!mul_rst) 

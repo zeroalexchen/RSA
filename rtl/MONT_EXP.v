@@ -12,10 +12,10 @@ module MONT_EXP(c,e,n,clk,sys_rst,result,finish);
 	reg 	[2047:0]	temp_d1;
 	reg 	[2047:0]	temp_d2;
 	reg 	[2047:0]	temp_e;
-	reg 				mm_rst;
+	reg			 		mm_rst;
 	reg 	[2:0]		status;
 	reg 	[10:0]		i;
-	reg 	[2047:0]	e_top;
+	reg 	[2048:0]	e_top;
 	wire	[2047:0]	mm_result;
 	wire 				mm_finish;
 
@@ -35,7 +35,7 @@ always@(posedge clk or posedge sys_rst) begin
 		mm_rst <= 0;
 		status <= start;
 	end
-	case (status)
+	case (status)	// synthesis parallel_case
 		start: begin
 			if (!sys_rst) 
 			mm_rst <= 1;
@@ -49,7 +49,7 @@ always@(posedge clk or posedge sys_rst) begin
 				else
 				begin
 					temp_d1 <= c;
-					e_top = (temp_e + 1) >> 2;
+					e_top <= (temp_e + 1) >> 2;
 					temp_e <= e;
 					status <= judge;	
 				end
@@ -83,7 +83,7 @@ always@(posedge clk or posedge sys_rst) begin
 						status <= exp_mul2;
 					end
 					else begin
-						e_top = e_top >> 1;
+						e_top <= e_top >> 1;
 						status <= judge;
 					end
 				end
@@ -98,7 +98,7 @@ always@(posedge clk or posedge sys_rst) begin
 			begin
 				if(mm_finish) begin
 					temp_d1 <= mm_result;
-					e_top = e_top >> 1;
+					e_top <= e_top >> 1;
 					status <= judge; 
 				end
 				else
