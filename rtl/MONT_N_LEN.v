@@ -31,7 +31,7 @@ begin
 				status <= length1;
 			end
 		
-		length1:													//获取N的最高位
+		length1:													//鑾峰彇N鐨勬渶楂樹綅
 			begin
 				if(i != 2048)
 				begin

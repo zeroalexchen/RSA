@@ -46,7 +46,7 @@ begin
 					begin
 						if(temp_x < n)
 						begin
-							temp_x <= (temp_x << 1)
+							temp_x <= (temp_x << 1);
 							i <= i - 1;
 							status <= judge;
 						end
@@ -56,7 +56,9 @@ begin
 							status <= judge;
 						end
 					end
+				end
 				else
+				begin
 					status <= done;
 				end
 			end
