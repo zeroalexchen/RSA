@@ -8,8 +8,8 @@ module MONT_EXPRESS(x,n,n_len,clk,rst,result,finish);
 	output reg [2047:0] result;
 	output reg finish;
 
-	reg [2047:0] temp_x;
-	reg [10:0] i;
+	reg [2048:0] temp_x;
+	reg [11:0] i;
 	reg [1:0] status;
 
     parameter [1:0] start = 2'b00, judge = 2'b01, done = 2'b10;	
@@ -26,13 +26,14 @@ begin
 	case (status)
 		start:
 			begin
-				temp_x <= x;
-				i <= n_len + 1;
-				finish <= 0;
-				status <= judge;
+				if(!rst)
+					temp_x <= x;
+					i <= n_len + 1;
+					finish <= 0;
+					status <= judge;
 			end
 
-		judge:
+/*		judge:
 			begin
 				if(i != 0)
 				begin
@@ -52,21 +53,41 @@ begin
 						end
 						else
 						begin
-							result <= temp_x - n;
+							temp_x <= temp_x - n;
 							status <= judge;
 						end
 					end
 				end
 				else
 				begin
+					result <= temp_x;
 					status <= done;
 				end
-			end
+			end*/
 		
+		judge:
+			begin
+				if(!rst)
+					if(temp_x > n || temp_x == n)
+						temp_x <= temp_x - n;
+					else
+						if(temp_x < n && i != 0)
+						begin
+							temp_x <= temp_x << 1;
+							i <= i - 1;
+						end
+						else
+						begin
+							result <= temp_x;
+							status <= done;
+						end
+			end
+
 		done:
 			begin
-				finish <= 1;
-				status <= done;
+				if(!rst)
+					finish <= 1;
+					status <= done;
 			end
 
 		default: 
