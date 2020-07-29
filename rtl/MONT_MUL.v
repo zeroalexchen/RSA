@@ -1,107 +1,74 @@
-`include "MUL.v"
-module MONT_MUL(x,y,n,clk,mm_rst,mm_finish,result);
+module MONT_MUL(x,y,n,n_len,clk,rst,enable,result,finish);
+
     input   [2047:0]    x;
     input   [2047:0]    y;
     input   [2047:0]    n;
-	input	mm_rst;
-    input   clk;
+    input   [10:0]      n_len;
+    input   			clk;
+	input				rst;
+	input				enable;
 
-    output  reg [2047:0]    result;
-	output 	reg 			mm_finish;
-    
-    reg     [2048:0]    tempx;
-    reg     [2048:0]    tempy;
-    reg     [2:0]       status;
-	reg 				mul_start;
-	reg					mul_rst;
+    output reg [2049:0] result;
+	output reg		    finish;
 
-    wire    mul_finish;
-	wire    [2049:0]    r;
-    wire    [4096:0]    temp1;
-    wire    [4096:0]    temp2;
+    reg     [10:0]      i;    
+    reg     [1:0]       status;
 
-    MUL mul_u(.x(tempx),.y(tempy),.n(n),.clk(clk),.mul_rst(mul_rst),.result(r),.mul_start(mul_start),.mul_finish(mul_finish));
+    parameter [1:0] start = 2'b00,mul = 2'b01, done = 2'b10;
+
+always@(posedge clk or posedge rst) begin
+    if(rst)
+    begin
+        result <= 0;                                // 初始化变量
+        finish <= 0;
+        status <= start;
+    end
+
+    case (status)
+        start:
+            begin
+                if(!rst) 
+                begin   
+                    i <= 0;
+                    if(enable)                   // 等待模乘计算开启信号
+                        status <= mul;
+                    else
+                        status <= start;
+                end
+            end           
+        mul:
+            begin
+                if(!rst) 
+                begin
+                    result <= (result + x[i]*y + (result[0]^(x[i] && y[0])) * n) >> 1;
+                                                    // 蒙哥马利模乘
+                    if( i != n_len )                  // 有 n_len + 1 位，计算 n_len + 1 次，计算完后跳出循环
+                    begin
+                        i <= i + 1; 
+                        status <= mul;
+                    end
+                    else
+                        status <= done;
+                        
+                end
+			end
 					
-    assign temp1 = ( x % n ) * ( 2**2048 % n ) % n;		// 预计算 x 的蒙哥马利表达式 x'
-    assign temp2 = ( y % n ) * ( 2**2048 % n ) % n;		// 预计算 y 的蒙哥马利表达式 y'
-
-    parameter [2:0] start = 3'b000,mul = 3'b001, redc_start = 3'b010, redc = 3'b011 , done = 3'b100;
-
-	always@(posedge clk or posedge mm_rst) begin
-		if(mm_rst) begin
-			tempx <= 0;
-			tempy <= 0;
-			mm_finish <= 0;
-			result <= 0;
-			status <= start;						// 复位初始化变量
-			mul_start <= 0;
-			mul_rst <= 0;
-		end
-
-		case (status)	// synthesis parallel_case
-			start: 
-				begin
-					if(!mm_rst)
-					begin
-						tempx <= temp1;				// 模乘的第一个数为 x'
-						tempy <= temp2;				// 模乘的第二个数为 y'
-						mul_rst <= 1;				// 打开模乘模块的复位信号
-						status <= mul;
-					end
-					
-				end
-			mul:
-				begin
-					if(!mm_rst)
-					begin
-						mul_start <= 1;				// 打开模乘计算
-						mul_rst <= 0;				// 关闭模乘模块的复位信号
-						if(mul_finish)				// 等待模乘完成信号发出
-							status <= redc_start;
-						else
-							status <= mul;
-					end
-				end
-
-			redc_start:
-				begin
-					if(!mm_rst)
-					begin
-						tempx <= r;					// 模乘的第一个数为 r，即 mul 步骤中所得到的结果
-						tempy <= 1;					// 模乘的第二个数为 1，蒙哥马利约减可看成是和 1 相乘后的蒙哥马利模乘
-						mul_rst <= 1;				// 打开模乘模块的复位信号
-						mul_start <= 0;				// 关闭模乘计算
-						status <= redc;
-					end
-				end
-			
-			redc:
-				begin
-					if(!mm_rst)
-					begin
-						mul_start <= 1;				// 打开模乘计算
-						mul_rst <= 0;				// 关闭模乘模块的复位信号
-						if(mul_finish)				// 等待模乘完成信号发出
-							status <= done;
-						else
-							status <= redc;
-					end
-				end
-			
-			done:
-				begin
-					if(!mm_rst)
-					begin
-						mul_start <= 0;				// 关闭模乘计算
-						result <= r;				// 输出结果
-						mm_finish <= 1;
-						status <= done;
-					end	
-				end
-
-			default: 
-					status <= start;
-		endcase
-	end
+        done:
+			begin
+                if(!rst) 
+                begin
+                    if(result > n || result == n)
+                    begin
+                        result <= result - n ;
+                    end
+                    finish <= 1;  
+                    status <= done;
+                end
+			end
+            
+        default: 
+            status <= start;
+    endcase 
+end
 
 endmodule
