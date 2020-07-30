@@ -22,6 +22,8 @@ begin
 	begin
 		temp_x <= x;
 		i <= n_len + 1;
+		result <= 0;
+		finish <= 0;
 		status <= start;
 	end
 
@@ -59,8 +61,12 @@ begin
 		done:
 			begin
 				if(!rst)
+				begin
 					finish <= 1;
 					status <= done;
+				end
+				else
+					status <= start;
 			end
 
 		default: 

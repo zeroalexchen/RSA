@@ -1,11 +1,11 @@
 `include "MONT_MUL.v"
-`include "MONT_N_LEN.v"
 `include "MONT_EXPRESS.v"
-module MONT_TOP(x,y,n,clk,enable,rst,finish,result);
+module MONT_TOP(x,y,n,n_len,clk,enable,rst,finish,result);
 
 	input	[2047:0]	x;
 	input	[2047:0]	y;
 	input	[2047:0]	n;
+	input	[10:0]		n_len;
 	input				enable;
 	input				clk;
 	input				rst;
@@ -14,38 +14,34 @@ module MONT_TOP(x,y,n,clk,enable,rst,finish,result);
 	output reg 			finish;
 
 	reg					mul_enable;
-	reg 				n_len_enable;
 	reg 				express_enable;
 	reg	 				mul_rst;
-	reg 				n_len_rst;
 	reg					express_rst;
-	reg		[2:0]		status;
+	reg		[1:0]		status;
 
 	wire 				mul_finish;
-	wire 				n_len_finish;
 	wire 				express_finish;
 	wire	[2049:0]	mul_result;
-	wire 	[10:0]		n_len_result;
 	wire 	[2047:0]	express_result;
 
-	MONT_MUL mul_u(.x(express_result),.y(y),.n(n),.n_len(n_len_result),.clk(clk),.rst(mul_rst),.enable(mul_enable),.result(mul_result),.finish(mul_finish));	
-	MONT_N_LEN n_len_u(.n(n),.clk(clk),.rst(n_len_rst),.enable(n_len_enable),.result(n_len_result),.finish(n_len_finish));
-	MONT_EXPRESS express_u(.x(x),.n(n),.n_len(n_len_result),.clk(clk),.rst(express_rst),.enable(express_enable),.result(express_result),.finish(express_finish));
+	MONT_MUL mul_u(.x(express_result),.y(y),.n(n),.n_len(n_len),.clk(clk),.rst(mul_rst),
+					.enable(mul_enable),.result(mul_result),.finish(mul_finish));	
+	MONT_EXPRESS express_u(.x(x),.n(n),.n_len(n_len),.clk(clk),.rst(express_rst),
+							.enable(express_enable),.result(express_result),.finish(express_finish));
 
-	parameter [2:0]  start = 3'b000, n_length = 3'b001, express = 3'b010, mont_mult = 3'b011, done = 3'b100;
+	parameter [2:0]  start = 2'b00, express = 2'b01, mont_mult = 2'b10, done = 2'b11;
 
 	always@(posedge clk or posedge rst)
 	begin
 		if(rst)
 		begin
 			mul_enable <= 0;
-			n_len_enable <= 0;
 			express_enable <= 0;
 			mul_rst <= 0;
-			n_len_rst <= 0;
 			express_rst <= 0;
 			result <= 0;
 			finish <= 0;
+			status <= start;
 		end
 
 		case (status)
@@ -55,29 +51,12 @@ module MONT_TOP(x,y,n,clk,enable,rst,finish,result);
 					begin
 						if(enable)
 						begin
-							n_len_enable <= 1;
-							n_len_rst <= 1;
-							status <= n_length;
-						end
-						else
-							status <= start;
-					end
-				end
-
-			n_length:
-				begin
-					if(!rst)
-					begin
-						n_len_rst <= 0;
-						if(n_len_finish)
-						begin
-							n_len_enable <= 0;
 							express_enable <= 1;
 							express_rst <= 1;
 							status <= express;
 						end
 						else
-							status <= n_length;
+							status <= start;
 					end
 				end
 
@@ -88,7 +67,6 @@ module MONT_TOP(x,y,n,clk,enable,rst,finish,result);
 						express_rst <= 0;
 						if(express_finish)
 						begin
-							express_enable <= 0;
 							mul_enable <= 1;
 							mul_rst <= 1;
 							status <= mont_mult;
@@ -105,7 +83,6 @@ module MONT_TOP(x,y,n,clk,enable,rst,finish,result);
 						mul_rst <= 0;
 						if(mul_finish)
 						begin
-							mul_enable <= 0;
 							result <= mul_result;
 							status <= done;
 						end
@@ -118,6 +95,8 @@ module MONT_TOP(x,y,n,clk,enable,rst,finish,result);
 				begin
 					if(!rst)
 						begin
+							express_enable <= 0;
+							mul_enable <= 0;
 							finish <= 1;
 							status <= done;
 						end
